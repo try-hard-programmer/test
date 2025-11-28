@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  filemanager:
+    build:
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      # ✅ RUNTIME ENVIRONMENT VARIABLES
+      # These are injected at container startup, NOT at build time
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+      - VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID}
+    restart: unless-stopped
+
+# =============================================================================
+# USAGE:
+# =============================================================================
+#
+# 1. Create .env file with your credentials:
+#    VITE_SUPABASE_URL=https://your-project.supabase.co
+#    VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+#    VITE_SUPABASE_PROJECT_ID=your-project-id
+#
+# 2. Build image (without credentials):
+#    docker-compose -f docker-compose.runtime-env.yml build
+#
+# 3. Run container (with runtime credentials):
+#    docker-compose -f docker-compose.runtime-env.yml up -d
+#
+# 4. View logs:
+#    docker-compose -f docker-compose.runtime-env.yml logs -f
+#
+# =============================================================================
+# DEPLOYMENT EXAMPLE:
+# =============================================================================
+#
+# For different environments (dev, staging, prod):
+#
+# Development:
+#   export VITE_SUPABASE_URL=https://dev.supabase.co
+#   export VITE_SUPABASE_PUBLISHABLE_KEY=dev-key
+#   docker-compose -f docker-compose.runtime-env.yml up -d
+#
+# Production:
+#   export VITE_SUPABASE_URL=https://prod.supabase.co
+#   export VITE_SUPABASE_PUBLISHABLE_KEY=prod-key
+#   docker-compose -f docker-compose.runtime-env.yml up -d
+#
+# =============================================================================

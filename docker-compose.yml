@@ -1,0 +1,20 @@
+version: '3.3'
+services:
+  console:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      VITE_AGENT_API_URL: https://api.syntra.id
+      VITE_SUPABASE_PROJECT_ID: vkaixrdqtrzybovvquzv
+      VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrYWl4cmRxdHJ6eWJvdnZxdXp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1MzUxNjcsImV4cCI6MjA3MjExMTE2N30.Gk2gvi4wenftNxeyrHwwfDtVI7BgAH9lis7a5GGBPiU
+      VITE_SUPABASE_URL: https://vkaixrdqtrzybovvquzv.supabase.co
+    networks:
+      - syntra_default
+    logging:
+      driver: json-file
+      options:
+        max-file: '5'
+        max-size: 15m
+networks:
+  syntra_default:
