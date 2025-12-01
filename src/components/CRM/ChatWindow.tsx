@@ -19,6 +19,7 @@ import {
   Loader2,
   ArrowUp,
   CheckCircle2,
+  Archive,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -164,7 +165,7 @@ interface Agent {
 interface ChatWindowProps {
   chatId: string | null;
   customerName: string;
-  status: "open" | "pending" | "assigned" | "resolved";
+  status: "open" | "pending" | "assigned" | "resolved" | "closed";
   isAssigned: boolean;
   assignedTo?: string;
   isOwnChat: boolean; // NEW: Whether this chat belongs to the current logged-in user
@@ -184,7 +185,12 @@ interface ChatWindowProps {
   onSendMessage: (message: string) => void;
   onAssignToAgent: () => void;
   onMarkResolved: () => void;
-  onCreateTicket?: (ticket: Omit<Ticket, "id" | "ticketNumber" | "createdAt" | "updatedAt" | "relatedMessages">) => void;
+  onCreateTicket?: (
+    ticket: Omit<
+      Ticket,
+      "id" | "ticketNumber" | "createdAt" | "updatedAt" | "relatedMessages"
+    >
+  ) => void;
   onUpdateTicket?: (ticketId: string, updates: Partial<Ticket>) => void;
 }
 
@@ -331,7 +337,7 @@ export const ChatWindow = ({
   // ==========================================================================
 
   /** Filter only human agents (those with status defined) for escalation dropdown */
-  const humanAgents = agents.filter(agent => agent.status !== undefined);
+  const humanAgents = agents.filter((agent) => agent.status !== undefined);
 
   // ==========================================================================
   // RENDER
@@ -376,7 +382,7 @@ export const ChatWindow = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-base">{customerName}</h3>
-                {/* Resolved Status Badge */}
+                {/* Resolved Status Badge (Existing) */}
                 {status === "resolved" && (
                   <Badge
                     variant="outline"
@@ -384,6 +390,16 @@ export const ChatWindow = ({
                   >
                     <CheckCircle2 className="w-3 h-3" />
                     Resolved
+                  </Badge>
+                )}
+                {/* === ADD THIS BLOCK === */}
+                {status === "closed" && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300"
+                  >
+                    <Archive className="w-3 h-3" />
+                    Closed
                   </Badge>
                 )}
               </div>
@@ -402,7 +418,9 @@ export const ChatWindow = ({
                       <Badge
                         variant="outline"
                         className="text-xs flex items-center gap-1 text-muted-foreground"
-                        title={`Previously handled by ${aiAgentName}. Escalated at ${new Date(escalatedAt).toLocaleString()}`}
+                        title={`Previously handled by ${aiAgentName}. Escalated at ${new Date(
+                          escalatedAt
+                        ).toLocaleString()}`}
                       >
                         <Bot className="w-3 h-3" />
                         Previously: {aiAgentName}
@@ -488,131 +506,149 @@ export const ChatWindow = ({
           </div>
         </div>
 
-      {/* ================================================================
+        {/* ================================================================
           MESSAGES AREA - Scrollable message list with states
           ================================================================ */}
-      <ScrollArea className="flex-1 p-6">
-        <div className="space-y-4 max-w-4xl mx-auto">
-          {/* Loading State */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center space-y-3">
-                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-                <p className="text-sm text-muted-foreground">Loading messages...</p>
-              </div>
-            </div>
-          ) : messages.length === 0 ? (
-            /* Empty State: No messages */
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center space-y-2">
-                <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center">
-                  <Bot className="w-8 h-8 text-muted-foreground" />
+        <ScrollArea className="flex-1 p-6">
+          <div className="space-y-4 max-w-4xl mx-auto">
+            {/* Loading State */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                  <p className="text-sm text-muted-foreground">
+                    Loading messages...
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">No messages yet</p>
-                <p className="text-xs text-muted-foreground">Start the conversation below</p>
               </div>
-            </div>
-          ) : (
-            /* Message List */
-            <>
-              {messages.map((message) => {
-                const isCustomer = message.sender === "customer";
-                const isAI = message.sender === "ai";
+            ) : messages.length === 0 ? (
+              /* Empty State: No messages */
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-2">
+                  <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center">
+                    <Bot className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    No messages yet
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Start the conversation below
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Message List */
+              <>
+                {messages.map((message) => {
+                  const isCustomer = message.sender === "customer";
+                  const isAI = message.sender === "ai";
 
-                return (
-                  <div
-                    key={message.id}
-                    className={`flex gap-3 ${isCustomer ? "" : "flex-row-reverse"}`}
-                  >
-                    {/* Message Avatar */}
-                    <Avatar className="w-8 h-8 flex-shrink-0">
-                      <AvatarFallback
-                        className={
-                          isCustomer
-                            ? "bg-primary/10 text-primary"
-                            : isAI
-                            ? "bg-blue-500/10 text-blue-500"
-                            : "bg-green-500/10 text-green-500"
-                        }
-                      >
-                        {isCustomer ? (
-                          message.senderName ? message.senderName.charAt(0).toUpperCase() : "?"
-                        ) : isAI ? (
-                          <Bot className="w-4 h-4" />
-                        ) : (
-                          <User className="w-4 h-4" />
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    {/* Message Content */}
+                  return (
                     <div
-                      className={`flex-1 ${isCustomer ? "" : "flex flex-col items-end"}`}
+                      key={message.id}
+                      className={`flex gap-3 ${
+                        isCustomer ? "" : "flex-row-reverse"
+                      }`}
                     >
-                      {/* Sender Name & Timestamp */}
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-foreground">
-                          {message.senderName}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {message.timestamp}
-                        </span>
-                      </div>
+                      {/* Message Avatar */}
+                      <Avatar className="w-8 h-8 flex-shrink-0">
+                        <AvatarFallback
+                          className={
+                            isCustomer
+                              ? "bg-primary/10 text-primary"
+                              : isAI
+                              ? "bg-blue-500/10 text-blue-500"
+                              : "bg-green-500/10 text-green-500"
+                          }
+                        >
+                          {isCustomer ? (
+                            message.senderName ? (
+                              message.senderName.charAt(0).toUpperCase()
+                            ) : (
+                              "?"
+                            )
+                          ) : isAI ? (
+                            <Bot className="w-4 h-4" />
+                          ) : (
+                            <User className="w-4 h-4" />
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
 
-                      {/* Message Bubble */}
+                      {/* Message Content */}
                       <div
-                        className={`inline-block max-w-[70%] rounded-lg px-4 py-2 ${
-                          isCustomer
-                            ? "bg-muted"
-                            : isAI
-                            ? "bg-blue-500/10 border border-blue-500/20"
-                            : "bg-primary text-primary-foreground"
+                        className={`flex-1 ${
+                          isCustomer ? "" : "flex flex-col items-end"
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">
-                          {message.content}
-                        </p>
+                        {/* Sender Name & Timestamp */}
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium text-foreground">
+                            {message.senderName}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {message.timestamp}
+                          </span>
+                        </div>
+
+                        {/* Message Bubble */}
+                        <div
+                          className={`inline-block max-w-[70%] rounded-lg px-4 py-2 ${
+                            isCustomer
+                              ? "bg-muted"
+                              : isAI
+                              ? "bg-blue-500/10 border border-blue-500/20"
+                              : "bg-primary text-primary-foreground"
+                          }`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap">
+                            {message.content}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-              {/* Auto-scroll anchor: invisible div at the end of messages */}
-              <div ref={messagesEndRef} />
-            </>
-          )}
-        </div>
-      </ScrollArea>
+                  );
+                })}
+                {/* Auto-scroll anchor: invisible div at the end of messages */}
+                <div ref={messagesEndRef} />
+              </>
+            )}
+          </div>
+        </ScrollArea>
 
-      {/* ================================================================
+        {/* ================================================================
           MESSAGE INPUT - Text input with send button
           ================================================================ */}
-      <div className="border-t bg-card p-4">
-        <div className="flex items-end gap-2 max-w-4xl mx-auto">
-          <Button variant="ghost" size="icon" className="flex-shrink-0">
-            <Paperclip className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <Input
-              type="text"
-              placeholder={!isOwnChat ? "Only the assigned agent can reply" : "Type your message..."}
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={!isOwnChat}
-              className={`min-h-[40px] ${!isOwnChat ? "opacity-60" : ""}`}
-            />
+        <div className="border-t bg-card p-4">
+          <div className="flex items-end gap-2 max-w-4xl mx-auto">
+            <Button variant="ghost" size="icon" className="flex-shrink-0">
+              <Paperclip className="w-5 h-5" />
+            </Button>
+            <div className="flex-1">
+              <Input
+                type="text"
+                placeholder={
+                  !isOwnChat
+                    ? "Only the assigned agent can reply"
+                    : "Type your message..."
+                }
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={!isOwnChat}
+                className={`min-h-[40px] ${!isOwnChat ? "opacity-60" : ""}`}
+              />
+            </div>
+            <Button
+              onClick={handleSend}
+              disabled={!messageInput.trim() || !isOwnChat}
+              className="flex-shrink-0"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Send
+            </Button>
           </div>
-          <Button
-            onClick={handleSend}
-            disabled={!messageInput.trim() || !isOwnChat}
-            className="flex-shrink-0"
-          >
-            <Send className="w-4 h-4 mr-2" />
-            Send
-          </Button>
         </div>
-      </div>
       </div>
 
       {/* ====================================================================
@@ -639,7 +675,8 @@ export const ChatWindow = ({
               Escalate to Human Agent
             </DialogTitle>
             <DialogDescription>
-              Transfer this chat from AI to a human agent for personalized assistance.
+              Transfer this chat from AI to a human agent for personalized
+              assistance.
             </DialogDescription>
           </DialogHeader>
 
@@ -662,7 +699,10 @@ export const ChatWindow = ({
             {/* Select Human Agent */}
             <div className="space-y-2">
               <Label htmlFor="agent">Select Human Agent *</Label>
-              <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+              <Select
+                value={selectedAgentId}
+                onValueChange={setSelectedAgentId}
+              >
                 <SelectTrigger id="agent">
                   <SelectValue placeholder="Choose an agent..." />
                 </SelectTrigger>
@@ -678,7 +718,11 @@ export const ChatWindow = ({
                           <User className="w-4 h-4" />
                           <span>{agent.name}</span>
                           <Badge
-                            variant={agent.status === "active" ? "default" : "secondary"}
+                            variant={
+                              agent.status === "active"
+                                ? "default"
+                                : "secondary"
+                            }
                             className="text-xs"
                           >
                             {agent.status}

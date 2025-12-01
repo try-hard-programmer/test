@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/apiClient';
+import { apiClient } from "@/lib/apiClient";
 
 /**
  * CRM Chats, Messages, and Tickets Service
@@ -7,137 +7,148 @@ import { apiClient } from '@/lib/apiClient';
 
 // ============= Type Definitions =============
 
-export type ChatStatus = 'open' | 'pending' | 'assigned' | 'resolved' | 'closed';
-export type CommunicationChannel = 'whatsapp' | 'telegram' | 'email' | 'web' | 'mcp';
-export type SenderType = 'customer' | 'agent' | 'ai';
-export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
-export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type HandledBy = 'ai' | 'human' | 'unassigned';
+export type ChatStatus =
+  | "open"
+  | "pending"
+  | "assigned"
+  | "resolved"
+  | "closed";
+export type CommunicationChannel =
+  | "whatsapp"
+  | "telegram"
+  | "email"
+  | "web"
+  | "mcp";
+export type SenderType = "customer" | "agent" | "ai";
+export type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
+export type TicketPriority = "low" | "medium" | "high" | "urgent";
+export type HandledBy = "ai" | "human" | "unassigned";
 
 export interface Customer {
-    id: string;
-    organization_id: string;
-    name: string;
-    email?: string | null;
-    phone?: string | null;
-    avatar_url?: string | null;
-    metadata?: Record<string, any>;
-    created_at: string;
-    updated_at: string;
+  id: string;
+  organization_id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  avatar_url?: string | null;
+  metadata?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Chat {
-    id: string;
-    organization_id: string;
-    customer_id: string;
+  human_id: any;
+  id: string;
+  organization_id: string;
+  customer_id: string;
 
-    // Legacy fields (backward compatibility)
-    assigned_agent_id?: string | null;
-    agent_name?: string | null;
+  // Legacy fields (backward compatibility)
+  assigned_agent_id?: string | null;
+  agent_name?: string | null;
 
-    // NEW: Dual agent tracking
-    ai_agent_id?: string | null;
-    ai_agent_name?: string | null;
-    human_agent_id?: string | null;
-    human_agent_name?: string | null;
-    handled_by: HandledBy;
+  // NEW: Dual agent tracking
+  ai_agent_id?: string | null;
+  ai_agent_name?: string | null;
+  human_agent_id?: string | null;
+  human_agent_name?: string | null;
+  handled_by: HandledBy;
 
-    // NEW: Escalation tracking
-    escalated_at?: string | null;
-    escalation_reason?: string | null;
+  // NEW: Escalation tracking
+  escalated_at?: string | null;
+  escalation_reason?: string | null;
 
-    // Existing fields
-    status: ChatStatus;
-    channel: CommunicationChannel;
-    unread_count: number;
-    last_message_at: string;
-    created_at: string;
-    resolved_at?: string | null;
-    resolved_by_agent_id?: string | null;
-    updated_at: string;
+  // Existing fields
+  status: ChatStatus;
+  channel: CommunicationChannel;
+  unread_count: number;
+  last_message_at: string;
+  created_at: string;
+  resolved_at?: string | null;
+  resolved_by_agent_id?: string | null;
+  updated_at: string;
 
-    // Populated fields
-    customer?: Customer;
-    assigned_agent?: any;
-    customer_name?: string;
-    last_message?: Message;
+  // Populated fields
+  customer?: Customer;
+  assigned_agent?: any;
+  customer_name?: string;
+  last_message?: Message;
 }
 
 export interface ChatObject {
-    chats: Chat[];
-    total: number;
+  chats: Chat[];
+  total: number;
 }
 
 export interface Message {
-    id: string;
-    chat_id: string;
-    sender_type: SenderType;
-    sender_id?: string | null;
-    content: string;
-    ticket_id?: string | null;
-    metadata?: Record<string, any>;
-    created_at: string;
-    updated_at: string;
-    // Populated fields
-    sender_name?: string;
+  id: string;
+  chat_id: string;
+  sender_type: SenderType;
+  sender_id?: string | null;
+  content: string;
+  ticket_id?: string | null;
+  metadata?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  // Populated fields
+  sender_name?: string;
 }
 
 export interface MessagesResponse {
-    messages: Message[];
-    total: number;
+  messages: Message[];
+  total: number;
 }
 
 export interface Ticket {
-    id: string;
-    organization_id: string;
-    ticket_number: string;
-    chat_id: string;
-    customer_id: string;
-    assigned_agent_id?: string | null;
-    title: string;
-    description?: string | null;
-    category?: string | null;
-    priority: TicketPriority;
-    status: TicketStatus;
-    tags: string[];
-    created_at: string;
-    updated_at: string;
-    resolved_at?: string | null;
-    closed_at?: string | null;
-    // Populated fields
-    customer?: Customer;
-    assigned_agent?: any;
-    customer_name?: string;
+  id: string;
+  organization_id: string;
+  ticket_number: string;
+  chat_id: string;
+  customer_id: string;
+  assigned_agent_id?: string | null;
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  priority: TicketPriority;
+  status: TicketStatus;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+  resolved_at?: string | null;
+  closed_at?: string | null;
+  // Populated fields
+  customer?: Customer;
+  assigned_agent?: any;
+  customer_name?: string;
 }
 
 export interface ChatWithDetails extends Chat {
-    customer: Customer;
-    messages?: Message[];
-    tickets?: Ticket[];
+  customer: Customer;
+  messages?: Message[];
+  tickets?: Ticket[];
 }
 
 // NEW: Chat Escalation Request
 export interface ChatEscalationRequest {
-    human_agent_id: string;
-    reason?: string;
+  human_agent_id: string;
+  reason?: string;
 }
 
 // NEW: Chat List Query Params
 export interface ChatListParams {
-    // Existing
-    status_filter?: ChatStatus;
-    channel?: CommunicationChannel;
-    assigned_agent_id?: string;
-    search?: string;
-    skip?: number;
-    limit?: number;
+  // Existing
+  status_filter?: ChatStatus;
+  channel?: CommunicationChannel;
+  assigned_agent_id?: string;
+  search?: string;
+  skip?: number;
+  limit?: number;
 
-    // NEW: Dual agent tracking filters
-    handled_by?: HandledBy;
-    ai_assigned_to?: string;
-    human_assigned_to?: string;
-    escalated?: boolean;
-    unassigned?: boolean;
+  // NEW: Dual agent tracking filters
+  handled_by?: HandledBy;
+  ai_assigned_to?: string;
+  human_assigned_to?: string;
+  escalated?: boolean;
+  unassigned?: boolean;
 }
 
 // ============= API Functions =============
@@ -145,46 +156,58 @@ export interface ChatListParams {
 /**
  * Get all chats with optional filters
  */
-export const getChats = async (params?: ChatListParams): Promise<ChatObject> => {
-    const queryParams = new URLSearchParams();
+export const getChats = async (
+  params?: ChatListParams
+): Promise<ChatObject> => {
+  const queryParams = new URLSearchParams();
 
-    // Existing filters
-    if (params?.status_filter) queryParams.append('status_filter', params.status_filter);
-    if (params?.channel) queryParams.append('channel', params.channel);
-    if (params?.assigned_agent_id) queryParams.append('assigned_agent_id', params.assigned_agent_id);
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
-    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+  // Existing filters
+  if (params?.status_filter)
+    queryParams.append("status_filter", params.status_filter);
+  if (params?.channel) queryParams.append("channel", params.channel);
+  if (params?.assigned_agent_id)
+    queryParams.append("assigned_agent_id", params.assigned_agent_id);
+  if (params?.search) queryParams.append("search", params.search);
+  if (params?.skip !== undefined)
+    queryParams.append("skip", params.skip.toString());
+  if (params?.limit !== undefined)
+    queryParams.append("limit", params.limit.toString());
 
-    // NEW: Dual agent tracking filters
-    if (params?.handled_by) queryParams.append('handled_by', params.handled_by);
-    if (params?.ai_assigned_to) queryParams.append('ai_assigned_to', params.ai_assigned_to);
-    if (params?.human_assigned_to) queryParams.append('human_assigned_to', params.human_assigned_to);
-    if (params?.escalated !== undefined) queryParams.append('escalated', params.escalated.toString());
-    if (params?.unassigned !== undefined) queryParams.append('unassigned', params.unassigned.toString());
+  // NEW: Dual agent tracking filters
+  if (params?.handled_by) queryParams.append("handled_by", params.handled_by);
+  if (params?.ai_assigned_to)
+    queryParams.append("ai_assigned_to", params.ai_assigned_to);
+  if (params?.human_assigned_to)
+    queryParams.append("human_assigned_to", params.human_assigned_to);
+  if (params?.escalated !== undefined)
+    queryParams.append("escalated", params.escalated.toString());
+  if (params?.unassigned !== undefined)
+    queryParams.append("unassigned", params.unassigned.toString());
 
-    const url = `/crm/chats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  const url = `/crm/chats${
+    queryParams.toString() ? `?${queryParams.toString()}` : ""
+  }`;
 
-    return apiClient.get<ChatObject>(url);
+  return apiClient.get<ChatObject>(url);
 };
 
 /**
  * Get a specific chat by ID
  */
 export const getChat = async (chatId: string): Promise<ChatWithDetails> => {
-    return apiClient.get<ChatWithDetails>(`/crm/chats/${chatId}`);
+  return apiClient.get<ChatWithDetails>(`/crm/chats/${chatId}`);
 };
 
 /**
  * Create a new chat
  */
 export const createChat = async (chatData: {
-    customer_name: string;
-    contact: string;
-    channel: CommunicationChannel;
-    initial_message: string;
+  customer_name: string;
+  contact: string;
+  channel: CommunicationChannel;
+  initial_message: string;
 }): Promise<Chat> => {
-    return apiClient.post<Chat>('/crm/chats', chatData);
+  return apiClient.post<Chat>("/crm/chats", chatData);
 };
 
 /**
@@ -194,170 +217,187 @@ export const createChat = async (chatData: {
  * 2. Assign to current user: Pass agentId as null and assignToMe as true
  */
 export const assignChat = async (
-    chatId: string,
-    agentId: string | null,
-    options?: {
-        assignToMe?: boolean;
-        reason?: string;
-    }
+  chatId: string,
+  agentId: string | null,
+  options?: {
+    assignToMe?: boolean;
+    reason?: string;
+  }
 ): Promise<Chat> => {
-    // If assignToMe is true, use assigned_to_me parameter
-    if (options?.assignToMe) {
-        return apiClient.put<Chat>(`/crm/chats/${chatId}/assign`, {
-            assigned_to_me: true,
-            reason: options.reason,
-        });
-    }
-
-    // Otherwise, use assigned_agent_id for assigning to specific agent
+  // If assignToMe is true, use assigned_to_me parameter
+  if (options?.assignToMe) {
     return apiClient.put<Chat>(`/crm/chats/${chatId}/assign`, {
-        assigned_agent_id: agentId,
+      assigned_to_me: true,
+      reason: options.reason,
     });
+  }
+
+  // Otherwise, use assigned_agent_id for assigning to specific agent
+  return apiClient.put<Chat>(`/crm/chats/${chatId}/assign`, {
+    assigned_agent_id: agentId,
+  });
 };
 
 /**
  * NEW: Escalate chat to human agent
  */
 export const escalateChat = async (
-    chatId: string,
-    data: ChatEscalationRequest
+  chatId: string,
+  data: ChatEscalationRequest
 ): Promise<Chat> => {
-    return apiClient.put<Chat>(`/crm/chats/${chatId}/escalate`, data);
+  return apiClient.put<Chat>(`/crm/chats/${chatId}/escalate`, data);
 };
 
 /**
  * Mark chat as resolved
  */
 export const resolveChat = async (chatId: string): Promise<Chat> => {
-    return apiClient.put<Chat>(`/crm/chats/${chatId}/resolve`, {});
+  return apiClient.put<Chat>(`/crm/chats/${chatId}/resolve`, {});
 };
 
 /**
  * Get messages for a specific chat
  */
 export const getChatMessages = async (
-    chatId: string,
-    params?: { skip?: number; limit?: number }
+  chatId: string,
+  params?: { skip?: number; limit?: number }
 ): Promise<MessagesResponse> => {
-    const queryParams = new URLSearchParams();
-    if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
-    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+  const queryParams = new URLSearchParams();
+  if (params?.skip !== undefined)
+    queryParams.append("skip", params.skip.toString());
+  if (params?.limit !== undefined)
+    queryParams.append("limit", params.limit.toString());
 
-    const url = `/crm/chats/${chatId}/messages${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    return apiClient.get<MessagesResponse>(url);
+  const url = `/crm/chats/${chatId}/messages${
+    queryParams.toString() ? `?${queryParams.toString()}` : ""
+  }`;
+  return apiClient.get<MessagesResponse>(url);
 };
 
 /**
  * Send a message in a chat
  */
 export const sendMessage = async (
-    chatId: string,
-    content: string,
-    senderType: SenderType = 'agent',
-    senderId?: string,
-    ticketId?: string,
-    metadata?: Record<string, any>
+  chatId: string,
+  content: string,
+  senderType: SenderType = "agent",
+  senderId?: string,
+  ticketId?: string,
+  metadata?: Record<string, any>
 ): Promise<Message> => {
-    return apiClient.post<Message>(`/crm/chats/${chatId}/messages`, {
-        content,
-        sender_type: senderType,
-        sender_id: senderId,
-        ticket_id: ticketId,
-        metadata: metadata || {},
-    });
+  return apiClient.post<Message>(`/crm/chats/${chatId}/messages`, {
+    content,
+    sender_type: senderType,
+    sender_id: senderId,
+    ticket_id: ticketId,
+    metadata: metadata || {},
+  });
 };
 
 /**
  * Get all tickets with optional filters
  */
 export const getTickets = async (params?: {
-    status_filter?: TicketStatus;
-    priority?: TicketPriority;
-    assigned_agent_id?: string;
-    search?: string;
-    skip?: number;
-    limit?: number;
+  status_filter?: TicketStatus;
+  priority?: TicketPriority;
+  assigned_agent_id?: string;
+  search?: string;
+  skip?: number;
+  limit?: number;
 }): Promise<Ticket[]> => {
-    const queryParams = new URLSearchParams();
-    if (params?.status_filter) queryParams.append('status_filter', params.status_filter);
-    if (params?.priority) queryParams.append('priority', params.priority);
-    if (params?.assigned_agent_id) queryParams.append('assigned_agent_id', params.assigned_agent_id);
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
-    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+  const queryParams = new URLSearchParams();
+  if (params?.status_filter)
+    queryParams.append("status_filter", params.status_filter);
+  if (params?.priority) queryParams.append("priority", params.priority);
+  if (params?.assigned_agent_id)
+    queryParams.append("assigned_agent_id", params.assigned_agent_id);
+  if (params?.search) queryParams.append("search", params.search);
+  if (params?.skip !== undefined)
+    queryParams.append("skip", params.skip.toString());
+  if (params?.limit !== undefined)
+    queryParams.append("limit", params.limit.toString());
 
-    const url = `/crm/tickets${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    return apiClient.get<Ticket[]>(url);
+  const url = `/crm/tickets${
+    queryParams.toString() ? `?${queryParams.toString()}` : ""
+  }`;
+  return apiClient.get<Ticket[]>(url);
 };
 
 /**
  * Get a specific ticket by ID
  */
 export const getTicket = async (ticketId: string): Promise<Ticket> => {
-    return apiClient.get<Ticket>(`/crm/tickets/${ticketId}`);
+  return apiClient.get<Ticket>(`/crm/tickets/${ticketId}`);
 };
 
 /**
  * Create a new ticket
  */
 export const createTicket = async (ticketData: {
-    chat_id: string;
-    title: string;
-    description?: string;
-    category?: string;
-    priority?: TicketPriority;
-    tags?: string[];
+  chat_id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  priority?: TicketPriority;
+  tags?: string[];
 }): Promise<Ticket> => {
-    return apiClient.post<Ticket>('/crm/tickets', ticketData);
+  return apiClient.post<Ticket>("/crm/tickets", ticketData);
 };
 
 /**
  * Update a ticket
  */
 export const updateTicket = async (
-    ticketId: string,
-    updates: {
-        title?: string;
-        description?: string;
-        category?: string;
-        priority?: TicketPriority;
-        status?: TicketStatus;
-        assigned_agent_id?: string;
-        tags?: string[];
-    }
+  ticketId: string,
+  updates: {
+    title?: string;
+    description?: string;
+    category?: string;
+    priority?: TicketPriority;
+    status?: TicketStatus;
+    assigned_agent_id?: string;
+    tags?: string[];
+  }
 ): Promise<Ticket> => {
-    return apiClient.put<Ticket>(`/crm/tickets/${ticketId}`, updates);
+  return apiClient.put<Ticket>(`/crm/tickets/${ticketId}`, updates);
 };
 
 /**
  * Assign ticket to an agent
  */
-export const assignTicket = async (ticketId: string, agentId: string): Promise<Ticket> => {
-    return apiClient.put<Ticket>(`/crm/tickets/${ticketId}/assign`, {
-        assigned_agent_id: agentId,
-    });
+export const assignTicket = async (
+  ticketId: string,
+  agentId: string
+): Promise<Ticket> => {
+  return apiClient.put<Ticket>(`/crm/tickets/${ticketId}/assign`, {
+    assigned_agent_id: agentId,
+  });
 };
 
 /**
  * Get all customers
  */
 export const getCustomers = async (params?: {
-    search?: string;
-    skip?: number;
-    limit?: number;
+  search?: string;
+  skip?: number;
+  limit?: number;
 }): Promise<Customer[]> => {
-    const queryParams = new URLSearchParams();
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
-    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+  const queryParams = new URLSearchParams();
+  if (params?.search) queryParams.append("search", params.search);
+  if (params?.skip !== undefined)
+    queryParams.append("skip", params.skip.toString());
+  if (params?.limit !== undefined)
+    queryParams.append("limit", params.limit.toString());
 
-    const url = `/crm/customers${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    return apiClient.get<Customer[]>(url);
+  const url = `/crm/customers${
+    queryParams.toString() ? `?${queryParams.toString()}` : ""
+  }`;
+  return apiClient.get<Customer[]>(url);
 };
 
 /**
  * Get a specific customer by ID
  */
 export const getCustomer = async (customerId: string): Promise<Customer> => {
-    return apiClient.get<Customer>(`/crm/customers/${customerId}`);
+  return apiClient.get<Customer>(`/crm/customers/${customerId}`);
 };

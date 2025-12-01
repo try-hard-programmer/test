@@ -43,7 +43,15 @@ import {
 } from "@/components/ui/collapsible";
 
 // Icons
-import { Search, Bot, User, Filter, X, Loader2, CheckCircle2 } from "lucide-react";
+import {
+  Search,
+  Bot,
+  User,
+  Filter,
+  X,
+  Loader2,
+  CheckCircle2,
+} from "lucide-react";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -72,7 +80,7 @@ interface Chat {
   unreadCount: number;
   isAssigned: boolean;
   assignedTo: string;
-  status: "open" | "pending" | "assigned" | "resolved";
+  status: "open" | "pending" | "assigned" | "resolved" | "closed";
   channel: string;
   handledBy: "ai" | "human" | "unassigned";
 }
@@ -89,7 +97,7 @@ interface Chat {
 export interface ChatFilters {
   readStatus: "all" | "read" | "unread";
   agent: string;
-  status: "all" | "open" | "pending" | "assigned" | "resolved";
+  status: "all" | "open" | "pending" | "assigned" | "resolved" | "closed";
   channel: "all" | "whatsapp" | "telegram" | "email" | "web" | "mcp" | string;
 }
 
@@ -155,18 +163,14 @@ export const CustomerServiceSidebar = ({
   const agents = Array.from(
     new Set(
       chats
-        .filter(c => c.assignedTo && c.assignedTo !== "-")
-        .map(c => c.assignedTo)
+        .filter((c) => c.assignedTo && c.assignedTo !== "-")
+        .map((c) => c.assignedTo)
     )
   );
 
   /** Extract unique channels from chats for filter dropdown (exclude undefined/null) */
   const channels = Array.from(
-    new Set(
-      chats
-        .filter(c => c.channel)
-        .map(c => c.channel)
-    )
+    new Set(chats.filter((c) => c.channel).map((c) => c.channel))
   );
 
   /**
@@ -189,7 +193,10 @@ export const CustomerServiceSidebar = ({
     }
 
     // Filter by search query (client-side only)
-    if (searchQuery && !chat.customerName.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (
+      searchQuery &&
+      !chat.customerName.toLowerCase().includes(searchQuery.toLowerCase())
+    ) {
       return false;
     }
 
@@ -198,7 +205,8 @@ export const CustomerServiceSidebar = ({
     if (filters.readStatus === "unread" && chat.unreadCount === 0) return false;
 
     // Filter by agent (client-side only - agent filter uses names, API needs UUIDs)
-    if (filters.agent !== "all" && chat.assignedTo !== filters.agent) return false;
+    if (filters.agent !== "all" && chat.assignedTo !== filters.agent)
+      return false;
 
     // NOTE: Status and Channel filters are now handled server-side via API
     // Removed redundant client-side filtering for these fields
@@ -207,7 +215,9 @@ export const CustomerServiceSidebar = ({
   });
 
   /** Count how many filters are currently active (not set to "all") */
-  const activeFiltersCount = Object.values(filters).filter(v => v !== "all").length;
+  const activeFiltersCount = Object.values(filters).filter(
+    (v) => v !== "all"
+  ).length;
 
   // ==========================================================================
   // UTILITY FUNCTIONS
@@ -229,6 +239,8 @@ export const CustomerServiceSidebar = ({
         return "bg-blue-500";
       case "resolved":
         return "bg-gray-500";
+      case "closed": // FIX: Handle closed color
+        return "bg-slate-700";
       default:
         return "bg-gray-500";
     }
@@ -272,7 +284,11 @@ export const CustomerServiceSidebar = ({
         <Collapsible open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <div className="flex items-center justify-between">
             <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-between h-8 text-xs"
+              >
                 <div className="flex items-center gap-1.5">
                   <Filter className="h-3.5 w-3.5" />
                   <span>Filters</span>
@@ -300,9 +316,15 @@ export const CustomerServiceSidebar = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="text-[10px]">All</SelectItem>
-                  <SelectItem value="read" className="text-[10px]">Read</SelectItem>
-                  <SelectItem value="unread" className="text-[10px]">Unread</SelectItem>
+                  <SelectItem value="all" className="text-[10px]">
+                    All
+                  </SelectItem>
+                  <SelectItem value="read" className="text-[10px]">
+                    Read
+                  </SelectItem>
+                  <SelectItem value="unread" className="text-[10px]">
+                    Unread
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -320,11 +342,21 @@ export const CustomerServiceSidebar = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="text-[10px]">All Status</SelectItem>
-                  <SelectItem value="open" className="text-[10px]">Open</SelectItem>
-                  <SelectItem value="pending" className="text-[10px]">Pending</SelectItem>
-                  <SelectItem value="assigned" className="text-[10px]">Assigned</SelectItem>
-                  <SelectItem value="resolved" className="text-[10px]">Resolved</SelectItem>
+                  <SelectItem value="all" className="text-[10px]">
+                    All Status
+                  </SelectItem>
+                  <SelectItem value="open" className="text-[10px]">
+                    Open
+                  </SelectItem>
+                  <SelectItem value="pending" className="text-[10px]">
+                    Pending
+                  </SelectItem>
+                  <SelectItem value="assigned" className="text-[10px]">
+                    Assigned
+                  </SelectItem>
+                  <SelectItem value="resolved" className="text-[10px]">
+                    Resolved
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -332,7 +364,9 @@ export const CustomerServiceSidebar = ({
             {/* Agent */}
             {agents.length > 0 && (
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-semibold">Assigned Agent</Label>
+                <Label className="text-[10px] font-semibold">
+                  Assigned Agent
+                </Label>
                 <Select
                   value={filters.agent}
                   onValueChange={(value) =>
@@ -343,9 +377,15 @@ export const CustomerServiceSidebar = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all" className="text-[10px]">All Agents</SelectItem>
+                    <SelectItem value="all" className="text-[10px]">
+                      All Agents
+                    </SelectItem>
                     {agents.map((agent) => (
-                      <SelectItem key={agent} value={agent} className="text-[10px]">
+                      <SelectItem
+                        key={agent}
+                        value={agent}
+                        className="text-[10px]"
+                      >
                         {agent}
                       </SelectItem>
                     ))}
@@ -368,10 +408,18 @@ export const CustomerServiceSidebar = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all" className="text-[10px]">All Channels</SelectItem>
+                    <SelectItem value="all" className="text-[10px]">
+                      All Channels
+                    </SelectItem>
                     {channels.map((channel) => (
-                      <SelectItem key={channel} value={channel} className="text-[10px]">
-                        {channel ? channel.charAt(0).toUpperCase() + channel.slice(1) : "-"}
+                      <SelectItem
+                        key={channel}
+                        value={channel}
+                        className="text-[10px]"
+                      >
+                        {channel
+                          ? channel.charAt(0).toUpperCase() + channel.slice(1)
+                          : "-"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -416,14 +464,20 @@ export const CustomerServiceSidebar = ({
                 onClick={() => onChatSelect(chat.id)}
                 className={`p-2 cursor-pointer hover:bg-muted/50 transition-colors ${
                   activeChat === chat.id ? "bg-muted" : ""
-                } ${chat.status === "resolved" ? "opacity-60 bg-gray-50 dark:bg-gray-900/30" : ""}`}
+                } ${
+                  chat.status === "resolved"
+                    ? "opacity-60 bg-gray-50 dark:bg-gray-900/30"
+                    : ""
+                }`}
               >
                 <div className="flex items-start gap-2">
                   {/* Avatar with Status Indicator */}
                   <div className="relative">
                     <Avatar className="w-9 h-9">
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                        {chat.customerName ? chat.customerName.charAt(0).toUpperCase() : "?"}
+                        {chat.customerName
+                          ? chat.customerName.charAt(0).toUpperCase()
+                          : "?"}
                       </AvatarFallback>
                     </Avatar>
                     {/* Status Indicator Badge */}
@@ -481,8 +535,12 @@ export const CustomerServiceSidebar = ({
 
                       {/* Channel Badge */}
                       {chat.channel && (
-                        <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
-                          {chat.channel.charAt(0).toUpperCase() + chat.channel.slice(1)}
+                        <Badge
+                          variant="secondary"
+                          className="text-[9px] h-4 px-1.5"
+                        >
+                          {chat.channel.charAt(0).toUpperCase() +
+                            chat.channel.slice(1)}
                         </Badge>
                       )}
 

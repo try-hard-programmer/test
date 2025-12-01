@@ -192,8 +192,7 @@ interface Chat {
   escalationReason?: string;
   // Status and content
   channel: string;
-  // UPDATE THIS LINE:
-  status: "open" | "pending" | "assigned" | "resolved" | "closed";
+  status: "open" | "pending" | "assigned" | "resolved";
   messages: Message[];
   labels?: string[];
   createdDate: string;
@@ -332,14 +331,6 @@ export const CustomerService = ({
   // --------------------------------------------------------------------------
   /** List of all chats (filtered by assigned/unassigned) */
   const [chats, setChats] = useState<Chat[]>([]);
-
-  // ADD THIS REF TO TRACK CHATS STATE WITHOUT RE-RENDERS
-  const chatsRef = useRef<Chat[]>([]);
-
-  // SYNC REF WITH STATE
-  useEffect(() => {
-    chatsRef.current = chats;
-  }, [chats]);
 
   /** Loading state for chats fetch */
   const [chatsLoading, setChatsLoading] = useState(true);
@@ -614,90 +605,24 @@ export const CustomerService = ({
    * Memoized to prevent unnecessary WebSocket reconnections
    */
   const handleNewMessageNotification = useCallback(
-    async (notification: WebSocketNewMessage) => {
+    (notification: WebSocketNewMessage) => {
       const { data } = notification;
       const { chat_id, message_id, customer_name, message_content } = data;
 
-      // 1. CHECK IF CHAT EXISTS USING REF
-      // using ref prevents stale state issues without adding 'chats' to dependency array
-      const chatExists = chatsRef.current.some((c) => c.id === chat_id);
+      // Idempotency check: prevent duplicate message processing
+      // if (processedMessageIdsRef.current.has(message_id)) {
+      //   console.log('⏭️ Message already processed, skipping:', message_id);
+      //   return;
+      // }
+      // processedMessageIdsRef.current.add(message_id);
 
-      // 2. HANDLE NEW CHAT (Fetching logic)
-      if (!chatExists) {
-        console.log(
-          "🆕 New chat detected via WebSocket, fetching details:",
-          chat_id
-        );
-        try {
-          // Fetch full chat details from API
-          const newChatData = await crmChatsService.getChat(chat_id);
-
-          // Transform API response (snake_case) to Frontend Chat interface (camelCase)
-          const newChat: Chat = {
-            id: newChatData.id,
-            customerName:
-              newChatData.customer_name || customer_name || "Unknown Customer",
-            lastMessage: newChatData.last_message?.content || message_content,
-            timestamp: new Date().toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            unreadCount: 1, // New chat is implicitly unread
-
-            // Legacy fields
-            isAssigned: newChatData.handled_by === "human",
-            assignedTo:
-              (newChatData.handled_by === "human"
-                ? newChatData.human_agent_name
-                : newChatData.ai_agent_name) || "-",
-
-            // Dual agent tracking
-            aiAgentId: newChatData.ai_agent_id || undefined,
-            aiAgentName: newChatData.ai_agent_name || undefined,
-            humanAgentId: newChatData.human_agent_id || undefined,
-            humanAgentName: newChatData.human_agent_name || undefined,
-            humanId: newChatData.human_agent_id || undefined,
-            handledBy: newChatData.handled_by,
-
-            // Escalation tracking
-            escalatedAt: newChatData.escalated_at || undefined,
-            escalationReason: newChatData.escalation_reason || undefined,
-
-            channel: newChatData.channel || "telegram",
-            status: newChatData.status as
-              | "open"
-              | "pending"
-              | "assigned"
-              | "resolved",
-            messages: [],
-            labels: [],
-            createdDate: new Date(newChatData.created_at).toLocaleDateString(),
-            tickets: [],
-          };
-
-          // Add to state immediately
-          setChats((prev) => [newChat, ...prev]);
-
-          // Notify user
-          playNotificationSound("message", 0.5);
-          toast.info(`New chat from ${newChat.customerName}`, {
-            action: {
-              label: "View",
-              onClick: () => setActiveChat(newChat.id),
-            },
-            duration: 5000,
-          });
-        } catch (error) {
-          console.error("Failed to fetch new chat details:", error);
-        }
-        return;
-      }
-
-      // 3. HANDLE EXISTING CHAT UPDATE (Original Logic)
+      // Update chats list with new message
       setChats((prevChats) => {
         const chatIndex = prevChats.findIndex((chat) => chat.id === chat_id);
 
         if (chatIndex === -1) {
+          // New chat - will be handled by API polling
+          console.log("New chat detected, will be loaded by next API fetch");
           return prevChats;
         }
 
@@ -745,25 +670,29 @@ export const CustomerService = ({
           return [...prev, transformedMessage];
         });
       } else {
-        // Show notification for background chats (existing chats only)
-        // Note: New chats are handled in the if(!chatExists) block
-        playNotificationSound("message", 0.5);
+        // Show notification for background chats
+        // Note: Using functional update to get chat from prevChats instead of external chats variable
+        setChats((prevChats) => {
+          const chat = prevChats.find((c) => c.id === chat_id);
+          if (chat) {
+            toast.info(`New message from ${customer_name}`, {
+              action: {
+                label: "View",
+                onClick: () => setActiveChat(chat_id),
+              },
+              duration: 5000,
+            });
+          }
+          return prevChats; // No state change, just using for side effect
+        });
 
-        // Find chat name from ref to ensure data is available for toast
-        const chat = chatsRef.current.find((c) => c.id === chat_id);
-        if (chat) {
-          toast.info(`New message from ${chat.customerName}`, {
-            action: {
-              label: "View",
-              onClick: () => setActiveChat(chat_id),
-            },
-            duration: 5000,
-          });
-        }
+        // Play notification sound
+        playNotificationSound("message", 0.5);
       }
     },
-    [activeChat] // Only activeChat dependency needed
-  );
+    [activeChat]
+  ); // activeChat is the only external dependency
+
   /**
    * Handle chat update notification (assignment, escalation, status change)
    * Memoized to prevent unnecessary WebSocket reconnections
@@ -1504,7 +1433,6 @@ export const CustomerService = ({
               onEscalateToHuman={handleEscalateChat}
               onCreateTicket={handleCreateTicket}
               onUpdateTicket={handleUpdateTicket}
-              messages={currentChatMessages}
             />
           </>
         ) : (
